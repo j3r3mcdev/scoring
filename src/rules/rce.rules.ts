@@ -2,29 +2,28 @@ import { Rule, RuleFinding, ScoringContext } from "../core/scoring-types";
 
 /**
  * ─────────────────────────────────────────────────────────────
- *  SQLi RULE — Détection simple basée sur les patterns classiques
+ *  RCE RULE — Détection simple de Remote Code Execution
  *  Version minimaliste, sans heuristique lourde.
  *  Compatible avec le moteur de scoring.
  * ─────────────────────────────────────────────────────────────
  */
-export class SqliRule implements Rule {
-  id = "sqli-basic";
-  name = "Basic SQL Injection Detection";
+export class RceRule implements Rule {
+  id = "rce-basic";
+  name = "Basic RCE Detection";
   description =
-    "Détecte les patterns SQLi classiques dans les événements normalisés.";
+    "Détecte des patterns classiques de Remote Code Execution dans les payloads.";
 
   /**
    * La règle s’applique si au moins un event contient un payload suspect.
    */
   applies(context: ScoringContext): boolean {
     return context.events.some(
-      (evt) =>
-        typeof evt.payload === "string" && this.containsSqli(evt.payload),
+      (evt) => typeof evt.payload === "string" && this.containsRce(evt.payload),
     );
   }
 
   /**
-   * Retourne un ou plusieurs findings SQLi.
+   * Retourne un ou plusieurs findings RCE.
    */
   execute(context: ScoringContext): RuleFinding[] {
     const findings: RuleFinding[] = [];
@@ -32,13 +31,13 @@ export class SqliRule implements Rule {
     for (const evt of context.events) {
       if (typeof evt.payload !== "string") continue;
 
-      if (this.containsSqli(evt.payload)) {
+      if (this.containsRce(evt.payload)) {
         findings.push({
           ruleId: this.id,
-          vulnerability: "sqli",
-          score: 0.9, // score brut (0 → 1)
+          vulnerability: "rce",
+          score: 0.95, // score brut (0 → 1)
           severity: "critical",
-          details: `Payload SQLi détecté : ${evt.payload}`,
+          details: `Payload RCE détecté : ${evt.payload}`,
         });
       }
     }
@@ -47,21 +46,26 @@ export class SqliRule implements Rule {
   }
 
   /**
-   * Détection simple de patterns SQLi.
+   * Détection simple de patterns RCE.
    */
-  private containsSqli(input: string): boolean {
+  private containsRce(input: string): boolean {
     const patterns = [
-      /('|%27)\s*or\s*1=1/i,
-      /('|%27)\s*or\s*'1'='1/i,
-      /union\s+select/i,
-      /select\s+\*/i,
-      /insert\s+into/i,
-      /drop\s+table/i,
-      /--/i,
-      /#/i,
-      /sleep\s*\(/i,
-      /benchmark\s*\(/i,
-      /xp_cmdshell/i,
+      // Command injection classiques
+      /;\s*rm\s+-rf\s+/i,
+      /;\s*curl\s+http/i,
+      /;\s*wget\s+http/i,
+      /;\s*nc\s+-e/i,
+      /;\s*bash\s+-c/i,
+
+      // Fonctions dangereuses
+      /system\s*\(/i,
+      /exec\s*\(/i,
+      /shell_exec\s*\(/i,
+      /passthru\s*\(/i,
+
+      // Substitution de commandes
+      /`[^`]+`/i,
+      /\$\([^)]*\)/i,
     ];
 
     return patterns.some((regex) => regex.test(input));

@@ -2,16 +2,16 @@ import { Rule, RuleFinding, ScoringContext } from "../core/scoring-types";
 
 /**
  * ─────────────────────────────────────────────────────────────
- *  SQLi RULE — Détection simple basée sur les patterns classiques
+ *  PATH TRAVERSAL RULE — Détection simple des patterns ../
  *  Version minimaliste, sans heuristique lourde.
  *  Compatible avec le moteur de scoring.
  * ─────────────────────────────────────────────────────────────
  */
-export class SqliRule implements Rule {
-  id = "sqli-basic";
-  name = "Basic SQL Injection Detection";
+export class PathTraversalRule implements Rule {
+  id = "path-traversal-basic";
+  name = "Basic Path Traversal Detection";
   description =
-    "Détecte les patterns SQLi classiques dans les événements normalisés.";
+    "Détecte les patterns de Path Traversal dans les événements normalisés.";
 
   /**
    * La règle s’applique si au moins un event contient un payload suspect.
@@ -19,12 +19,13 @@ export class SqliRule implements Rule {
   applies(context: ScoringContext): boolean {
     return context.events.some(
       (evt) =>
-        typeof evt.payload === "string" && this.containsSqli(evt.payload),
+        typeof evt.payload === "string" &&
+        this.containsPathTraversal(evt.payload),
     );
   }
 
   /**
-   * Retourne un ou plusieurs findings SQLi.
+   * Retourne un ou plusieurs findings Path Traversal.
    */
   execute(context: ScoringContext): RuleFinding[] {
     const findings: RuleFinding[] = [];
@@ -32,13 +33,13 @@ export class SqliRule implements Rule {
     for (const evt of context.events) {
       if (typeof evt.payload !== "string") continue;
 
-      if (this.containsSqli(evt.payload)) {
+      if (this.containsPathTraversal(evt.payload)) {
         findings.push({
           ruleId: this.id,
-          vulnerability: "sqli",
-          score: 0.9, // score brut (0 → 1)
-          severity: "critical",
-          details: `Payload SQLi détecté : ${evt.payload}`,
+          vulnerability: "path_traversal",
+          score: 0.75, // score brut (0 → 1)
+          severity: "medium",
+          details: `Payload Path Traversal détecté : ${evt.payload}`,
         });
       }
     }
@@ -47,21 +48,16 @@ export class SqliRule implements Rule {
   }
 
   /**
-   * Détection simple de patterns SQLi.
+   * Détection simple de patterns Path Traversal.
    */
-  private containsSqli(input: string): boolean {
+  private containsPathTraversal(input: string): boolean {
     const patterns = [
-      /('|%27)\s*or\s*1=1/i,
-      /('|%27)\s*or\s*'1'='1/i,
-      /union\s+select/i,
-      /select\s+\*/i,
-      /insert\s+into/i,
-      /drop\s+table/i,
-      /--/i,
-      /#/i,
-      /sleep\s*\(/i,
-      /benchmark\s*\(/i,
-      /xp_cmdshell/i,
+      /\.\.\//i, // ../
+      /\.\.\\/, // ..\ (Windows)
+      /%2e%2e%2f/i, // ../ encodé
+      /%2e%2e%5c/i, // ..\ encodé
+      /\/etc\/passwd/i,
+      /c:\\windows\\system32/i,
     ];
 
     return patterns.some((regex) => regex.test(input));

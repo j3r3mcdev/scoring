@@ -27,7 +27,7 @@ export type Severity = "low" | "medium" | "high" | "critical";
 //
 // 3. Source d’un événement normalisé
 //
-export type EventSource = "oast" | "scan" | "waf";
+export type EventSource = "http" | "dns" | "waf" | "scan" | "oast";
 
 //
 // 4. Événement normalisé (format unique pour tout le moteur)
