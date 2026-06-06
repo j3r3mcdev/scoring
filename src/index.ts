@@ -9,3 +9,8 @@ export * from "./rules/rule-registry";
 // ─────────────────────────────────────────────────────────────
 export * from "./normalizers";
 export { Normalizers, normalizeEvent } from "./normalizers";
+
+// ─────────────────────────────────────────────────────────────
+//  CORRELATION
+// ─────────────────────────────────────────────────────────────
+export * from "./correlation";
