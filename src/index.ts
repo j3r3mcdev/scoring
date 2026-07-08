@@ -19,3 +19,5 @@ export { Normalizers, normalizeEvent } from "./normalizers";
 //  CORRELATION
 // ─────────────────────────────────────────────────────────────
 export * from "./correlation";
+
+export * from "./core/scoring-types";
