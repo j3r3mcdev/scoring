@@ -63,7 +63,13 @@ export interface CorrelationChain {
   id: string;
   type: Vulnerability;
   events: NormalizedEvent[];
-  confidence: number; // 0 → 1
+  confidence: number;
+  // 🔥 Nouveau : score global de corrélation
+  correlationScore?: number;
+  // 🔥 Optionnel : nombre d’événements
+  eventCount?: number;
+  // 🔥 Optionnel : diversité des sources
+  sourceCount?: number;
 }
 
 //
